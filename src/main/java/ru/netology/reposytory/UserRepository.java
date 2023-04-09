@@ -15,7 +15,7 @@ public class UserRepository {
         List<Authorities> authorities = new ArrayList<>();
         if (user.equals("admin") && password.equals("5555")) {
             Collections.addAll(authorities, Authorities.READ, Authorities.WRITE, Authorities.DELETE);
-        } else if (user.equals("prjfi") && password.equals("2222")) {
+        } else if (user.equals("profi") && password.equals("2222")) {
             Collections.addAll(authorities, Authorities.READ, Authorities.WRITE);
         } else if (user.equals("user") && password.equals("1111")) {
             Collections.addAll(authorities, Authorities.READ);

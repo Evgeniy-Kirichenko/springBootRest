@@ -14,10 +14,10 @@ import ru.netology.service.AuthorizationService;
 import java.util.List;
 
 @RestController
-public class AuthorizationControlle {
+public class AuthorizationController {
     AuthorizationService service;
 
-    public AuthorizationControlle(AuthorizationService service) {
+    private AuthorizationController(AuthorizationService service) {
         this.service = service;
     }
 
@@ -25,15 +25,16 @@ public class AuthorizationControlle {
     public List<Authorities> getAuthorities(@RequestParam("user") String user, @RequestParam("password") String password) {
         return service.getAuthorities(user, password);
     }
+
     @ExceptionHandler(InvalidCredentials.class)
-    public ResponseEntity<String> handlerInvalidCredentials (InvalidCredentials e){
-        System.out.println("Exeption: "+ e.getMessage());
-        return new ResponseEntity<>("Exeption: "+ e.getMessage(), HttpStatus.BAD_REQUEST);
+    public ResponseEntity<String> handlerInvalidCredentials(InvalidCredentials e) {
+        return new ResponseEntity<>("Exception: " + e.getMessage(), HttpStatus.BAD_REQUEST);
     }
+
     @ExceptionHandler(UnauthorizedUser.class)
-    public ResponseEntity<String> handlerUnauthorizedUser (UnauthorizedUser e){
-        System.out.println("Exeption: "+ e.getMessage());
-        return new ResponseEntity<>("Exeption: "+ e.getMessage(), HttpStatus.UNAUTHORIZED);
+    public ResponseEntity<String> handlerUnauthorizedUser(UnauthorizedUser e) {
+        System.out.println("Exception: " + e.getMessage());
+        return new ResponseEntity<>("Exception: " + e.getMessage(), HttpStatus.UNAUTHORIZED);
     }
 
 }

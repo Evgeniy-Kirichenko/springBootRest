@@ -11,7 +11,7 @@ import java.util.List;
 public class AuthorizationService {
     UserRepository userRepository;
 
-    public AuthorizationService(UserRepository userRepository) {
+    private AuthorizationService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
 
