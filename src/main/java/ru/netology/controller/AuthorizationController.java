@@ -9,8 +9,10 @@ import org.springframework.web.bind.annotation.RestController;
 import ru.netology.exepion.InvalidCredentials;
 import ru.netology.exepion.UnauthorizedUser;
 import ru.netology.model.Authorities;
+import ru.netology.model.User;
 import ru.netology.service.AuthorizationService;
 
+import javax.validation.Valid;
 import java.util.List;
 
 @RestController
@@ -19,6 +21,11 @@ public class AuthorizationController {
 
     private AuthorizationController(AuthorizationService service) {
         this.service = service;
+    }
+
+    @GetMapping("/authorize")
+    public List<Authorities> getAuthorities(@Valid User user) {
+        return service.getAuthorities(user);
     }
 
 //    @GetMapping("/authorize")

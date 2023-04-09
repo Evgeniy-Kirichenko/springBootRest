@@ -2,6 +2,7 @@ package ru.netology.reposytory;
 
 import org.springframework.stereotype.Repository;
 import ru.netology.model.Authorities;
+import ru.netology.model.User;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -11,7 +12,7 @@ import java.util.List;
 @Repository
 public class UserRepository {
     public List<Authorities> getUserAuthorities(String user, String password) {
-        System.out.println(user +"  " + password);
+        System.out.println(user + " " + password);
         List<Authorities> authorities = new ArrayList<>();
         if (user.equals("admin") && password.equals("5555")) {
             Collections.addAll(authorities, Authorities.READ, Authorities.WRITE, Authorities.DELETE);
@@ -20,7 +21,6 @@ public class UserRepository {
         } else if (user.equals("user") && password.equals("1111")) {
             Collections.addAll(authorities, Authorities.READ);
         }
-        System.out.println(authorities);
-       return authorities;
+        return authorities;
     }
 }
