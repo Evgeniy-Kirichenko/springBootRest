@@ -21,10 +21,10 @@ public class AuthorizationController {
         this.service = service;
     }
 
-    @GetMapping("/authorize")
-    public List<Authorities> getAuthorities(@RequestParam("user") String user, @RequestParam("password") String password) {
-        return service.getAuthorities(user, password);
-    }
+//    @GetMapping("/authorize")
+//    public List<Authorities> getAuthorities(@RequestParam("user") String user, @RequestParam("password") String password) {
+//        return service.getAuthorities(user, password);
+//    }
 
     @ExceptionHandler(InvalidCredentials.class)
     public ResponseEntity<String> handlerInvalidCredentials(InvalidCredentials e) {
