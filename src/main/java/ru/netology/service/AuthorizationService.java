@@ -5,7 +5,7 @@ import ru.netology.exepion.InvalidCredentials;
 import ru.netology.exepion.UnauthorizedUser;
 import ru.netology.model.Authorities;
 import ru.netology.model.User;
-import ru.netology.reposytory.UserRepository;
+import ru.netology.repository.UserRepository;
 
 import java.util.List;
 
