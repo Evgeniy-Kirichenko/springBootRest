@@ -1,123 +1,89 @@
-# Задача «Сервис авторизации»
+# Задача «Интеграционное тестирование»
+
+Теперь, когда вы умеете создавать образы и знаете, что возможно их тестировать из java-кода, можно протестировать [приложение из первого задания этого модуля](../../spring_boot/task1/README.md).
 
 ## Описание
 
-Сегодня вы реализуете сервис авторизации пользователей по логину и паролю. Ключевое в этом задании то, как ваше приложение будет реагировать на ошибки, которые ваш сервис будет выбрасывать в разных случаях.
+**Шаг 0.** Если ваш компьютер использует ОС Windows, тогда проверьте, что в `Docker desktop` в настройках, во вкладке General стоит галочка напротив пункта `Expose daemon on...`, как на скрине ниже.
+![](../resources/image.png)
 
-Для работы нужно подготовить несколько классов.
+**Шаг 1.** Сначала вам надо собрать jar-архивы с вашими Spring Boot приложениями. Для этого в терминале, в корне вашего проекта выполните команду.
 
-**Шаг 0**. Создайте Spring Boot приложение и все классы контроллеры, сервисы и репозитории сделать бинами в вашем application context.
+Для gradle: `./gradlew clean build` (если пишет Permission denied, тогда сначала выполните `chmod +x ./gradlew`).
 
-**Шаг 1**. Запрос на разрешения будет приходить на контроллер:
+Для maven: `./mvnw clean package` (если пишет Permission denied, тогда сначала выполните `chmod +x ./mvnw`).
 
-```java
-@RestController
-public class AuthorizationController {
-    AuthorizationService service;
-    
-    @GetMapping("/authorize")
-    public List<Authorities> getAuthorities(@RequestParam("user") String user, @RequestParam("password") String password) {
-        return service.getAuthorities(user, password);
-    }
-}
-``` 
+**Шаг 2**. Теперь вы соберёте два образа для разных окружений — dev и prod. Для этого:
 
-**Шаг 2.** Класс-сервис, который будет обрабатывать введённые логин и пароль, выглядит так: 
+- для первого установите порт `server.port=8080` и профиль в dev с помощью параметра `netology.profile.dev=true` в application.properties и соберите приложение:
 
-```java
-public class AuthorizationService {
-    UserRepository userRepository;
+    - для gradle: `./gradlew clean build` (если пишет Permission denied, тогда сначала выполните `chmod +x ./gradlew`);
 
-    List<Authorities> getAuthorities(String user, String password) {
-        if (isEmpty(user) || isEmpty(password)) {
-            throw new InvalidCredentials("User name or password is empty");
-        }
-        List<Authorities> userAuthorities = userRepository.getUserAuthorities(user, password);
-        if (isEmpty(userAuthorities)) {
-            throw new UnauthorizedUser("Unknown user " + user);
-        }
-        return userAuthorities;
-    }
+    - для maven: `./mvnw clean package` (если пишет Permission denied, тогда сначала выполните `chmod +x ./mvnw`);
+- добавьте Dockerfile в корень проекта:
 
-    private boolean isEmpty(String str) {
-        return str == null || str.isEmpty();
-    }
+```
+FROM openjdk:8-jdk-alpine
+EXPOSE 8080
+ADD build/libs/<название вашего архива>.jar myapp.jar
+ENTRYPOINT ["java","-jar","/myapp.jar"]
+```
+Если вы собирали с помощью maven, тогда jar будет лежать в папке `target`, а если с gradle — в `build/libs`, и, соответственно, в `ADD` надо прописывать путь исходя из сборщика, который вы использовали.
 
-    private boolean isEmpty(List<?> str) {
-        return str == null || str.isEmpty();
-    }
-}
-``` 
-Он принимает в себя логин и пароль и возвращает разрешения для этого пользователя, если такой пользователь найден и данные валидны. Если присланные данные неверны, тогда выкидывается InvalidCredentials:
+- теперь соберите образ, выполнив в корне проекта в терминале команду `docker build -t devapp .`. Так вы соберёте ваше приложение в образ с названием `devapp`.
 
-```java
-public class InvalidCredentials extends RuntimeException {
-    public InvalidCredentials(String msg) {
-        super(msg);
-    }
-}
-``` 
+**Шаг 3.** Сейчас вам нужно собрать второй образ из этого же приложения, но с другими параметрами:
 
-Если ваш репозиторий не вернул никаких разрешений, либо вернул пустую коллекцию, тогда выкидывается ошибка UnauthorizedUser:
+- установите порт `server.port=8081` и профиль в prod с помощью параметра `netology.profile.dev=false` в application.properties и соберите приложение, как в предыдущем пунтке;
+- измените в Dockerfile параметр `EXPOSE` с 8080 на 8081;
+- соберите образ, выполнив в корне проекта в терминале команду `docker build -t prodapp .`. Так вы соберёте ваше приложение в образ с названием `prodapp`.
+
+**Шаг 4.** Напишите ваш интеграционный тест:
+
+- добавьте в зависимость проекта:
+
+Для gradle:
+
+```testImplementation 'org.testcontainers:junit-jupiter:1.15.1'```
+
+Для maven:
+
+
+```
+<dependency>
+    <groupId>org.testcontainers</groupId>
+    <artifactId>junit-jupiter</artifactId>
+    <version>1.15.1</version>
+    <scope>test</scope>
+</dependency>
+```
+- напишите тестовый класс в директории `src/test`:
 
 ```java
-public class UnauthorizedUser extends RuntimeException {
-    public UnauthorizedUser(String msg) {
-        super(msg);
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+class DemoApplicationTests {
+    @Autowired
+    TestRestTemplate restTemplate;
+
+    @BeforeAll
+    public static void setUp() {
+     
     }
-}
-``` 
 
-Enum с разрешениями выглядит так:
-
-```java
-public enum Authorities {
-    READ, WRITE, DELETE
-}
-``` 
-
-**Шаг 3.** Код-метод getUserAuthorities класс UserRepository, который возвращает либо разрешения, либо пустой массив, надо реализовать вам.
-
-```java
-public class UserRepository {
-    public List<Authorities> getUserAuthorities(String user, String password) {
-        return ...;
+    @Test
+    void contextLoads() {
+        ResponseEntity<String> forEntity = restTemplate.getForEntity("http://localhost:" + myapp.getMappedPort(8080), String.class);
+        System.out.println(forEntity.getBody());
     }
+
 }
-``` 
+```
 
-Для проверки работоспособности можно сделать запрос из браузера, заполнив `<ИМЯ_ЮЗЕРА>` и `<ПАРОЛЬ_ЮЗЕРА>` своими тестовыми данными: 
+- здесь вам надо создать два своих `GenericContainer` в полях класса — каждый под свой образ, который вы создали ранее.
+- в методе `setUp()` стартуйте контейнеры своих образов.
+- напишите два юнит-теста для проверки корректности того, что вернёт вам ваше приложение. Для этого используйте объект класса `TestRestTemplate`, который представлен в примере. С помощью него сделайте запрос. Чтобы понять, на каком порту запущен ваш контейнер, воспользуйтесь методом `getMappedPort`, как на примере из лекции. И для проверки корректности ответа проверьте с помощью метода `assertEquals`.
+ 
 
-localhost:8080/authorize?user=<ИМЯ_ЮЗЕРА>&password=<ПАРОЛЬ_ЮЗЕРА>
+ 
+ 
 
-**Шаг 4.** Теперь, когда весь код у вас готов, вам нужно написать обработчики ошибок, которые выкидывает сервис `AuthorizationService`. 
-
-Требования к обработчикам ошибок:
-
-* на `InvalidCredentials` он должен отсылать обратно клиенту HTTP-статус с кодом 400 и телом в виде сообщения из exception;
-* на `UnauthorizedUser` он должен отсылать обратно клиенту HTTP-статус с кодом 401 и телом в виде сообщения из exception и писать в консоль сообщение из exception.
-
-# Задача «Продвинутый сервис авторизации»* (со звёздочкой).
-
-## Описание
-
-**Задача — расширить функционал проедыдущего задания «Сервис авторизации».**
-
-Теперь ваш контроллер должен принимать не два объекта отдельно, а один объект, содержащий значения user и password. Соответственно, и `AuthorizationService` теперь работает с одним объектом.
-При этом API для клиента не изменилось, и он отправляет запрос вида: `localhost:8080/authorize?user=<ИМЯ_ЮЗЕРА>&password=<ПАРОЛЬ_ЮЗЕРА>`.
-
-Также вы должны проверять объект на валидность с помощью аннотации @Valid. Подумайте, как вы должны валидировать поля объекта `User`:
-
-```java
-@RestController
-public class AuthorizationController {
-    AuthorizationService service;
-    
-    @GetMapping("/authorize")
-    public List<Authorities> getAuthorities(@Valid User user) {
-        return service.getAuthorities(user);
-    }
-}
-``` 
-
-Сделать преобразование одного объекта в два вы можете с помощью своего `HandlerMethodArgumentResolver` и, например, своей аннотации. 
